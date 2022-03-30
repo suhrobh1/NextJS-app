@@ -25,6 +25,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps();
 const auth = getAuth();
 const db = getFirestore();
 const provider = new GoogleAuthProvider();
+
 const storage = getStorage(initializeApp(firebaseConfig));
 
 export function signup(email, password){
@@ -32,3 +33,17 @@ export function signup(email, password){
 }
 
 export { db, auth, provider, storage};
+
+/**`
+ * Converts a firestore document to JSON
+ * @param  {DocumentSnapshot} doc
+ */
+ export function postToJSON(doc) {
+  const data = doc.data();
+  return {
+    ...data,
+    // Gotcha! firestore timestamp NOT serializable to JSON. Must convert to milliseconds
+    createdAt: data?.createdAt.toMillis() || 0,
+    updatedAt: data?.updatedAt.toMillis() || 0,
+  };
+}

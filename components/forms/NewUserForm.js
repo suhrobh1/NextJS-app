@@ -47,51 +47,6 @@ export const NewUserForm = (props) => {
     // const uid = auth.currentUser.uid;
   };
 
-  const CreateAccount = (user) => {
-    const auth = getAuth();
-    console.log(auth);
-    console.log(user);
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // User is signed in, see docs for a list of available properties
-        // https://firebase.google.com/docs/reference/js/firebase.User
-        const uid = user.uid;
-        const refUser = doc(db, "users", uid);
-        setDoc(
-          refUser,
-          {
-            uid: user.uid,
-            email: user.email,
-            photoURL: user.photoURL,
-            displayName: user.displayName,
-            githubId: user.reloadUserInfo.screenName,
-            openToWork: true,
-            portfolioUrl: "",
-            bio: "",
-            location: "",
-
-            _createdAt: serverTimestamp(),
-            _updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        )
-          .then(function () {
-            console.log("everything worked");
-            router.push("/profile");
-          })
-          .then(function () {
-            console.log(user.displayName + " created");
-          })
-          .catch(function (error) {
-            console.log("error: " + error);
-          });
-      } else {
-        // User is signed out
-        // ...
-        console.log("User is signed out");
-      }
-    });
-  };
 
   const handleChange = (e) => {
     setUser({
@@ -102,7 +57,7 @@ export const NewUserForm = (props) => {
 
   return (
     <form
-      className="space-y-8 divide-y divide-gray-200"
+      className="space-y-8 divide-y divide-gray-200 "
       onSubmit={submitHandler}
     >
       <div className="space-y-8 divide-y divide-gray-200">

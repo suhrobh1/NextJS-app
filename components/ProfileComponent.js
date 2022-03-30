@@ -1,5 +1,25 @@
 import { Fragment, useState, useEffect, useContext } from "react";
 import { UserContext } from "../utils/context";
+import { RiLinkedinBoxFill, RiTwitterFill, RiGithubFill } from "react-icons/ri";
+import {
+  collection,
+  getDocs,
+  onSnapshot,
+  query,
+  orderBy,
+  where,
+  doc,
+  getDoc,
+  deleteDoc,
+  updateDoc,
+  setDoc,
+  docSnap,
+} from "@firebase/firestore";
+
+import { db, auth } from "../utils/firebase";
+import { useRouter } from "next/router";
+
+
 import { Dialog, Transition } from "@headlessui/react";
 import {
   ArchiveIcon,
@@ -74,28 +94,34 @@ const activity = [
   },
 ];
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
-}
 
-function ProfileComponent() {
+function ProfileComponent(props) {
+
   const { user, username } = useContext(UserContext);
+
   const [userData, setUserData] = useState({});
+
+  console.log("user", user);
 
   useEffect(() => {
     if (user) {
       const uid = auth.currentUser.uid;
-      console.log(uid);
+      console.log("UID", uid);
       const docRef = doc(db, "users", uid);
       const docSnap = getDoc(docRef).then((doc) => {
         docSnap = doc.data();
         console.log("docSnap", docSnap);
         setUserData(docSnap);
+        console.log("User Email", docSnap)
       });
-    }
+   }
   }, [user]);
-
+ 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  function classNames(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
 
   return (
     <>
@@ -305,31 +331,9 @@ function ProfileComponent() {
                   </aside>
                   <div className="py-3 xl:pt-6 xl:pb-0">
                     <h2 className="sr-only">Description</h2>
-                    <div className="prose max-w-none">
-                      <p>
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                        Expedita, hic? Commodi cumque similique id tempora
-                        molestiae deserunt at suscipit, dolor voluptatem,
-                        numquam, harum consequatur laboriosam voluptas tempore
-                        aut voluptatum alias?
-                      </p>
-                      <ul role="list">
-                        <li>
-                          Tempor ultrices proin nunc fames nunc ut auctor vitae
-                          sed. Eget massa parturient vulputate fermentum id
-                          facilisis nam pharetra. Aliquet leo tellus.
-                        </li>
-                        <li>
-                          Turpis ac nunc adipiscing adipiscing metus tincidunt
-                          senectus tellus.
-                        </li>
-                        <li>
-                          Semper interdum porta sit tincidunt. Dui suspendisse
-                          scelerisque amet metus eget sed. Ut tellus in sed
-                          dignissim.
-                        </li>
-                      </ul>
-                    </div>
+                   {
+                     <p>Email: {userData.email}</p>
+                   }
                   </div>
                   <section
                     aria-labelledby="activity-title"
