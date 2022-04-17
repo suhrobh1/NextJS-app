@@ -27,7 +27,7 @@ const NewUserPage = (props) => {
 
   
     
-  const [user, setUser] = useState({
+  const [userData, setUserData] = useState({
     username: "",
     about: "",
     photoURL: "",
@@ -39,8 +39,6 @@ const NewUserPage = (props) => {
     city: "",
     state: "",
     zip: "",
-    password: "",
-    confirmPassword: "",
   });
 
   
@@ -49,19 +47,10 @@ const NewUserPage = (props) => {
   return (
     <div>
       <div className="w-full inline-block ">
-        <div
-          className="w-60 text-center items-center flex cursor-pointer flex-row justify-center align-middle mx-auto py-2 rounded-full font-bold text-white bg-black/50 hover:bg-black shadow-lg shadow-green-400/50 hover:shadow-green-400/90"
-          onClick={signInWithGithub}
-        >
-          <span className="mr-2 self-center">
-            <RiGithubFill className="h-8 w-8" />
-          </span>
-          Sign up with Github
-        </div>
       </div>
       <NewUserForm
-        user={user}
-        setUser={setUser}
+        userData={userData}
+        setUserData={setUserData}
       />
     </div>
   );

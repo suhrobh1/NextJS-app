@@ -1,4 +1,3 @@
-import { db } from "../../utils/firebase";
 import React, { useEffect, useState } from "react";
 import {
   doc,
@@ -10,54 +9,135 @@ import {
   getFirestore,
   getDoc,
 } from "firebase/firestore";
-import {
-  getAuth,
-  signInWithPopup,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  GithubAuthProvider,
-} from "firebase/auth";
-import { auth } from "../../utils/firebase";
+import { useRouter } from "next/router";
+import { auth, db } from "../../utils/firebase";
 import { useContext } from "react";
 import { UserContext } from "../../utils/context";
 import { app } from "firebase/app";
-import { storage } from "../../utils/firebase";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
-import { useRouter } from "next/router";
-import { RiWindyFill } from "react-icons/ri";
-import { RiGithubFill } from "react-icons/ri";
-import { signup } from "../../utils/firebase";
+import avatar from './../assets/avatar.jpg';
+
+
 
 export const NewUserForm = (props) => {
-  
-  const { user, setUser } = props;
+  const router = useRouter();
+  const { user, username } = useContext(UserContext);
+  const { userData, setUserData } = props;
+  const [pushNotification, setPushNotification] = useState({
+    byEmail: false,
+    byText: false,
+  });
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    if (user) {
+      const uid = auth.currentUser.uid;
+      console.log(uid);
+      const docRef = doc(db, "users", uid);
+      const docSnap = getDoc(docRef).then((doc) => {
+        docSnap = doc.data();
+        if (docSnap) {
+          setUserData(docSnap);
+          setPushNotification(docSnap.pushNotification);
+          setUrl(docSnap.photoURL);
+          console.log(docSnap);
+        }
+      });
+    }
+  }, [user]);
 
   const submitHandler = (e) => {
     e.preventDefault();
-    console.log("email and password", user.email, user.password);
-    signup(user.email, user.password).then((data) => {
-      console.log("data from signup", data.user.uid);
-      const refUser = doc(db, "users", data.user.uid);
-      setDoc(refUser, {...user, uid: data.user.uid});
-      console.log("User from state", user);
-    });
-    
-    
+    if(image){ 
+    const storage = getStorage();
+    let imgId = `Avatar${Math.floor(Math.random() * 1000000)}`;
+    const storageRef = ref(storage, `images${imgId}`);
+    uploadBytes(storageRef, image)
+      .then((snapshot) => {
+        console.log("Uploaded a blob or file!");
+        const storageRef = ref(storage, `images${imgId}`);
+        getDownloadURL(storageRef, image).then((url) => {
+          console.log("image URL", url);
+          const uid = user.uid;
+          const refUser = doc(db, "users", uid);
+          setDoc(
+            refUser,
+            {
+              ...userData,
+              uid: uid,
+              email: user.email,
+              photoURL: url,
+              pushNotification: pushNotification,
+              _createdAt: serverTimestamp(),
+              _updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          )
+            .then(function () {
+              console.log("everything worked");
+              router.push("/profile");
+            })
+            .catch(function (error) {
+              console.log("error: " + error);
+            });
+        });
+      })
+      .catch((err) => {
+        const error = JSON.parse(JSON.stringify(err));
+        console.log("Error form .catch:", error.code);
+        console.log("Error form .catch:", err);
+      });
+    }else{
+      const uid = user.uid;
+      const refUser = doc(db, "users", uid);
+      setDoc(
+        refUser,
+        {
+          ...userData,
+          uid: uid,
+          email: user.email,
+          photoURL: url,
+          pushNotification: pushNotification,
+        },
+        { merge: true }
+      )
+        .then(function () {
+          console.log("everything worked");
+          router.push("/profile");
+        })
+        .catch(function (error) {
+          console.log("error: " + error);
+        });
 
-    // const uid = auth.currentUser.uid;
+    }
   };
 
+  const [image, setImage] = useState(null);
+  const changeHandler = (e) => {
+    if (e.target.files[0]) {
+      setImage(e.target.files[0]);
+    }
+  };
 
   const handleChange = (e) => {
-    setUser({
-      ...user,
+    setUserData({
+      ...userData,
       [e.target.name]: e.target.value,
+    });
+  };
+
+  const pushNotificationHandler = (value) => {
+    console.log(" value", value);
+    setPushNotification(() => {
+      return {
+        ...pushNotification,
+        [value]: !pushNotification[value],
+      };
     });
   };
 
   return (
     <form
-      className="space-y-8 divide-y divide-gray-200 "
+      className="space-y-8 divide-y divide-gray-200 lg:w-1/2 lg:mx-auto sm: mx-5 border  border border-gray-400 rounded-xl p-6"
       onSubmit={submitHandler}
     >
       <div className="space-y-8 divide-y divide-gray-200">
@@ -87,52 +167,12 @@ export const NewUserForm = (props) => {
                   id="username"
                   autoComplete="username"
                   className="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full min-w-0 rounded-none rounded-r-md sm:text-sm border-gray-300"
-                  value={user.username}
+                  value={userData.username}
+                  placeholder={userData.username}
                   onChange={(e) => handleChange(e)}
                 />
               </div>
             </div>
-
-            <div className="sm:col-span-4">
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <div className="mt-1 flex rounded-md shadow-sm">
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  autoComplete="password"
-                  className="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full min-w-0 rounded-none rounded-r-md sm:text-sm border-gray-300"
-                  value={user.password}
-                  onChange={(e) => handleChange(e)}
-                />
-              </div>
-            </div>
-
-            <div className="sm:col-span-4">
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Confirm Password
-              </label>
-              <div className="mt-1 flex rounded-md shadow-sm">
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  id="confirmPassword"
-                  autoComplete="confirmPassword"
-                  className="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full min-w-0 rounded-none rounded-r-md sm:text-sm border-gray-300"
-                  value={user.confirmPassword}
-                  onChange={(e) => handleChange(e)}
-                />
-              </div>
-            </div>
-
             <div className="sm:col-span-6">
               <label
                 htmlFor="about"
@@ -146,7 +186,8 @@ export const NewUserForm = (props) => {
                   name="about"
                   rows={3}
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md"
-                  value={user.about}
+                  value={userData.about}
+                  placeholder={userData.about}
                   onChange={(e) => handleChange(e)}
                 />
               </div>
@@ -163,21 +204,21 @@ export const NewUserForm = (props) => {
                 Photo
               </label>
               <div className="mt-1 flex items-center">
-                <span className="h-12 w-12 rounded-full overflow-hidden bg-gray-100">
-                  <svg
-                    className="h-full w-full text-gray-300"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                </span>
-                <button
-                  type="button"
+                {userData.photoURL ? (
+                  <img
+                    src={userData.photoURL}
+                    className="rounded-full h-20 w-20"
+                  />
+                ) : (
+                  <img src={avatar} className="rounded-full h-20 w-20" />
+                )}
+
+                <input
+                  type="file"
+                  name="imageUrl"
+                  onChange={changeHandler}
                   className="ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Change
-                </button>
+                />
               </div>
             </div>
 
@@ -207,9 +248,10 @@ export const NewUserForm = (props) => {
                   type="text"
                   name="firstName"
                   id="firstName"
-                  autoComplete="firstName"
+                  autoComplete="given-name"
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  value={user.firstName}
+                  value={userData.firstName}
+                  placeholder={userData.firstName}
                   onChange={(e) => handleChange(e)}
                 />
               </div>
@@ -227,29 +269,10 @@ export const NewUserForm = (props) => {
                   type="text"
                   name="lastName"
                   id="lastName"
-                  autoComplete="lastName"
+                  autoComplete="family-name"
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  value={user.lastName}
-                  onChange={(e) => handleChange(e)}
-                />
-              </div>
-            </div>
-
-            <div className="sm:col-span-4">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  value={user.email}
+                  value={userData.lastName}
+                  placeholder={userData.lastName}
                   onChange={(e) => handleChange(e)}
                 />
               </div>
@@ -268,7 +291,8 @@ export const NewUserForm = (props) => {
                   name="country"
                   autoComplete="country-name"
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  value={user.country}
+                  value={userData.country}
+                  placeholder={userData.country}
                   onChange={(e) => handleChange(e)}
                 >
                   <option value="United States">United States</option>
@@ -280,7 +304,7 @@ export const NewUserForm = (props) => {
 
             <div className="sm:col-span-6">
               <label
-                htmlFor="street-address"
+                htmlFor="address"
                 className="block text-sm font-medium text-gray-700"
               >
                 Street address
@@ -288,11 +312,12 @@ export const NewUserForm = (props) => {
               <div className="mt-1">
                 <input
                   type="text"
-                  name="street-address"
-                  id="street-address"
-                  autoComplete="street-address"
+                  name="address"
+                  id="address"
+                  autoComplete="address"
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  value={user.address}
+                  value={userData.address}
+                  placeholder={userData.address}
                   onChange={(e) => handleChange(e)}
                 />
               </div>
@@ -312,7 +337,8 @@ export const NewUserForm = (props) => {
                   id="city"
                   autoComplete="address-level2"
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  value={user.city}
+                  value={userData.city}
+                  placeholder={userData.city}
                   onChange={(e) => handleChange(e)}
                 />
               </div>
@@ -320,7 +346,7 @@ export const NewUserForm = (props) => {
 
             <div className="sm:col-span-2">
               <label
-                htmlFor="region"
+                htmlFor="state"
                 className="block text-sm font-medium text-gray-700"
               >
                 State / Province
@@ -328,11 +354,12 @@ export const NewUserForm = (props) => {
               <div className="mt-1">
                 <input
                   type="text"
-                  name="region"
-                  id="region"
+                  name="state"
+                  id="state"
                   autoComplete="address-level1"
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  value={user.state}
+                  value={userData.state}
+                  placeholder={userData.state}
                   onChange={(e) => handleChange(e)}
                 />
               </div>
@@ -340,7 +367,7 @@ export const NewUserForm = (props) => {
 
             <div className="sm:col-span-2">
               <label
-                htmlFor="postal-code"
+                htmlFor="zip"
                 className="block text-sm font-medium text-gray-700"
               >
                 ZIP / Postal code
@@ -348,11 +375,12 @@ export const NewUserForm = (props) => {
               <div className="mt-1">
                 <input
                   type="text"
-                  name="postal-code"
-                  id="postal-code"
+                  name="zip"
+                  id="zip"
                   autoComplete="postal-code"
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  value={user.zip}
+                  value={userData.zip}
+                  placeholder={userData.zip}
                   onChange={(e) => handleChange(e)}
                 />
               </div>
@@ -420,57 +448,61 @@ export const NewUserForm = (props) => {
                 </div>
               </div>
             </fieldset>
-            <fieldset className="mt-6">
-              <div>
-                <legend className="text-base font-medium text-gray-900">
-                  Push Notifications
-                </legend>
-                <p className="text-sm text-gray-500">
-                  Select notification method.
-                </p>
-              </div>
+
+            <fieldset>
+              <legend className="text-base font-medium text-gray-900">
+                Push Notifications
+              </legend>
+
               <div className="mt-4 space-y-4">
-                <div className="flex items-center">
-                  <input
-                    id="push-everything"
-                    name="push-notifications"
-                    type="radio"
-                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                  />
-                  <label
-                    htmlFor="push-everything"
-                    className="ml-3 block text-sm font-medium text-gray-700"
-                  >
-                    Text Message
-                  </label>
+                <div className="relative flex items-start">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="comments"
+                      name="comments"
+                      type="checkbox"
+                      className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                      checked={pushNotification.byText}
+                      onChange={(e) => pushNotificationHandler(e.target.value)}
+                      value="byText"
+                    />
+                  </div>
+                  <div className="ml-3 text-sm">
+                    <label
+                      htmlFor="comments"
+                      className="font-medium text-gray-700"
+                    >
+                      Text Message
+                    </label>
+                    <p className="text-gray-500">
+                      Get notified when someones posts a comment on a posting.
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <input
-                    id="push-email"
-                    name="push-notifications"
-                    type="radio"
-                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                  />
-                  <label
-                    htmlFor="push-email"
-                    className="ml-3 block text-sm font-medium text-gray-700"
-                  >
-                    Email
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id="push-nothing"
-                    name="push-notifications"
-                    type="radio"
-                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                  />
-                  <label
-                    htmlFor="push-nothing"
-                    className="ml-3 block text-sm font-medium text-gray-700"
-                  >
-                    No push notifications
-                  </label>
+
+                <div className="relative flex items-start">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="offers"
+                      name="offers"
+                      type="checkbox"
+                      className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                      checked={pushNotification.byEmail}
+                      onChange={(e) => pushNotificationHandler(e.target.value)}
+                      value="byEmail"
+                    />
+                  </div>
+                  <div className="ml-3 text-sm">
+                    <label
+                      htmlFor="offers"
+                      className="font-medium text-gray-700"
+                    >
+                      Email
+                    </label>
+                    <p className="text-gray-500">
+                      Get notified when a candidate accepts or rejects an offer.
+                    </p>
+                  </div>
                 </div>
               </div>
             </fieldset>

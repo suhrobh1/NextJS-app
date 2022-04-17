@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import { useRouter } from "next/router";
 import {
   doc,
   setDoc,
@@ -20,9 +20,16 @@ import {
   onAuthStateChanged,
   GithubAuthProvider,
 } from "firebase/auth";
-import { auth, db } from "../utils/firebase";
+import { auth, db, signup } from "../utils/firebase";
+//import * as functons from 'firebase-functions';
 
 const SignUpPage = () => {
+
+const router = useRouter();
+const [userSignUpData, setUserSignUpData] = useState({});
+const [error, setError] = useState("");
+
+
   const CreateAccount = (user) => {
     const auth = getAuth();
     console.log(auth);
@@ -87,6 +94,7 @@ const SignUpPage = () => {
         CreateAccount(user);
       })
       .catch((error) => {
+        
         // Handle Errors here.
         const errorCode = error.code;
         const errorMessage = error.message;
@@ -123,20 +131,29 @@ const SignUpPage = () => {
         const email = error.email;
         // The AuthCredential type that was used.
         const credential = GoogleAuthProvider.credentialFromError(error);
+        console.log("Error from GoogleAuth Exception")
         // ...
       });
   };
 
-  const [userSignUpData, setUserSignUpData] = useState({});
+
 
   const submitHandler = (e) => {
     e.preventDefault();
-    console.log("email and password", user.email, user.password);
-    signup(user.email, user.password).then((data) => {
+    console.log("email and password", userSignUpData.email, userSignUpData.password);
+    signup(userSignUpData.email, userSignUpData.password)
+    .then((data) => {
       console.log("data from signup", data.user.uid);
       const refUser = doc(db, "users", data.user.uid);
-      setDoc(refUser, { ...user, uid: data.user.uid });
-      console.log("User from state", user);
+     // setDoc(refUser, { ...userSignUpData, uid: data.user.uid });
+      console.log("User from state", userSignUpData);
+      router.push("/new-user");
+    })
+    .catch((err) =>{
+      const error = JSON.parse(JSON.stringify(err));
+       console.log("Error form .catch:", error.code)
+       console.log("Error form .catch:", err)
+      setError(error.code)
     });
 
     // const uid = auth.currentUser.uid;
@@ -147,13 +164,17 @@ const SignUpPage = () => {
       ...userSignUpData,
       [e.target.name]: e.target.value,
     });
+    setError("");
   };
 
   return (
-    <div className="mt-6">
+    <div className="mt-12 py-6 border  border border-gray-400 rounded-xl lg:w-1/4 md:w-1/2 sm:w-full mx-auto ">
+      <h3 className="text-xl lg:text-center font-bold text-gray-500  sm: text-center m-6">
+            Sign up for free
+          </h3>
       <div className="w-full inline-block ">
         <div
-          className="w-60 text-center items-center flex cursor-pointer flex-row justify-center align-middle mx-auto py-2 rounded-full font-bold text-white bg-black/50 hover:bg-black shadow-lg shadow-green-400/50 hover:shadow-green-400/90"
+          className="w-60 text-center items-center flex cursor-pointer flex-row justify-center align-middle mx-auto py-2 rounded-full border border-indigo-500 font-bold text-indigo-500 bg-white hover:bg-indigo-500 hover:text-white"
           onClick={signUpWithGithub}
         >
           <span className="mr-2 self-center">
@@ -164,7 +185,7 @@ const SignUpPage = () => {
       </div>
       <div className="w-full inline-block mt-2">
         <div
-          className="w-60 text-center items-center flex cursor-pointer flex-row justify-center align-middle mx-auto py-2 rounded-full font-bold text-white bg-black/50 hover:bg-black shadow-lg shadow-green-400/50 hover:shadow-green-400/90"
+          className="w-60 text-center items-center flex cursor-pointer flex-row justify-center align-middle mx-auto py-2 rounded-full border border-indigo-500 font-bold text-indigo-500 bg-white hover:bg-indigo-500 hover:text-white"
           onClick={signUpWithGoogle}
         >
           <span className="mr-2 self-center">
@@ -177,71 +198,79 @@ const SignUpPage = () => {
         className="space-y-8 divide-y divide-gray-200 w-3/4 mx-auto"
         onSubmit={submitHandler}
       >
-        <div className="space-y-8 divide-y divide-gray-200 mx-auto border">
-          <div>
-            <h3 className="text-lg leading-6 font-medium text-gray-900">OR</h3>
+        <div className="  ">
+          <h3 className="text-xl font-bold text-gray-500 sm: text-center lg:text-center m-6">
+            OR
+          </h3>
+          {
+            error? (error==="auth/email-already-in-use") ? <span className="text-sm font-italic text-red-500 sm:text-center m-6">This email is already in use! </span>: null
+            :null
+
+
+
+
+          }
+          
+             
+         
+
+          <div className="relative border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600 m-4">
+            <label
+              htmlFor="email"
+              className="absolute -top-2 left-2 -mt-px inline-block px-1 bg-white text-xs font-medium text-gray-900"
+            >
+              Email address
+            </label>
+            <div className="mt-1 ">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                className="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
+                value={userSignUpData.email}
+                onChange={(e) => handleChange(e)}
+              />
+            </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 ">
-            
-            <div className="sm:col-span-4">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:w-1/2 sm:text-sm border-gray-300 rounded-md"
-                  value={userSignUpData.email}
-                  onChange={(e) => handleChange(e)}
-                />
-              </div>
+          <div className="relative border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600 m-4">
+            <label
+              htmlFor="username"
+              className="absolute -top-2 left-2 -mt-px inline-block px-1 bg-white text-xs font-medium text-gray-900"
+            >
+              Password
+            </label>
+            <div className="mt-1">
+              <input
+                type="password"
+                name="password"
+                id="password"
+                autoComplete="password"
+                className="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
+                value={userSignUpData.password}
+                onChange={(e) => handleChange(e)}
+              />
             </div>
+          </div>
 
-            <div className="sm:col-span-4">
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  autoComplete="password"
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/3 sm:text-sm border-gray-300 rounded-md"
-                  value={userSignUpData.password}
-                  onChange={(e) => handleChange(e)}
-                />
-              </div>
-            </div>
-
-            <div className="sm:col-span-4 ">
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Confirm Password
-              </label>
-              <div className="mt-1">
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  id="confirmPassword"
-                  autoComplete="confirmPassword"
-                  className="shadow-sm focus:ring-indigo-900 focus:border-indigo-500 block w-1/3 sm:text-sm border-gray-300 rounded-md"
-                  value={userSignUpData.confirmPassword}
-                  onChange={(e) => handleChange(e)}
-                />
-              </div>
+          <div className="relative border border-gray-300 rounded-md px-3 py-2 shadow-sm focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600 m-4">
+            <label
+              htmlFor="username"
+              className="absolute -top-2 left-2 -mt-px inline-block px-1 bg-white text-xs font-medium text-gray-900"
+            >
+              Confirm Password
+            </label>
+            <div className="mt-1">
+              <input
+                type="password"
+                name="confirmPassword"
+                id="confirmPassword"
+                autoComplete="confirmPassword"
+                className="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
+                value={userSignUpData.confirmPassword}
+                onChange={(e) => handleChange(e)}
+              />
             </div>
           </div>
         </div>
@@ -263,14 +292,7 @@ const SignUpPage = () => {
           </div>
         </div>
       </form>
-
-
-
-      
     </div>
-    
-
-    
   );
 };
 

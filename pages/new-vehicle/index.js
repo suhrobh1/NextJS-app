@@ -1,14 +1,16 @@
-import React from 'react'
-import { NewVehicleForm } from '../../components/Forms/NewVehicleForm';
+import React from "react";
+import { NewVehicleForm } from "../../components/Forms/NewVehicleForm";
+import SideNavigation from "../../components/SideNavigation";
 
 const NewVehiclePage = () => {
+
+  const sideNavStatus = true;
+  const id = 1;
   return (
-    
-    <div>
-        <NewVehicleForm/>
-       <div>NewVehiclePage</div>
-      <p>This will house the NewVehicleForm component. I may need to pass the details pulled from dbs for a vehicle to the form component. Do I?</p>
+    <div className="flex">
+      <SideNavigation sideNavStatus = {sideNavStatus} id = {id} />
+      <NewVehicleForm />
     </div>
-  )
-}
+  );
+};
 export default NewVehiclePage;
