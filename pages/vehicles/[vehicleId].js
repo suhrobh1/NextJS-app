@@ -47,19 +47,19 @@ const SingleVehiclePage = () => {
   return (
     <div className="flex">
       <SideNavigation sideNavStatus={sideNavStatus} id={id} />
-      <div className="bg-white">
+      <div className="bg-white w-full ">
         <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
           <div className="lg:grid lg:grid-cols-2 lg:gap-x-8 lg:items-start">
             {/* Image gallery */}
             <Tab.Group as="div" className="flex flex-col-reverse">
               {/* Image selector */}
               <div className="hidden mt-6 w-full max-w-2xl mx-auto sm:block lg:max-w-none">
-                <Tab.List className="grid grid-cols-4 gap-6">
+                <Tab.List className="grid grid-cols-4 gap-4 ">
                   {vehicle?
                   photoArray.map((image, index) => (
                     <Tab
                       key={index}
-                      className="relative h-24 bg-white rounded-md flex items-center justify-center text-sm font-medium uppercase text-gray-900 cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring focus:ring-offset-4 focus:ring-opacity-50"
+                      className="relative h-24 w-full bg-white rounded-md flex items-center justify-center text-sm font-medium uppercase text-gray-900 cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring focus:ring-offset-4 focus:ring-opacity-50"
                     >
                       {({ selected }) => (
                         <>
@@ -67,7 +67,7 @@ const SingleVehiclePage = () => {
                             <img
                               src={image}
                               alt=""
-                              className="w-full h-full object-center object-cover"
+                              className="w-full h-full object-center object-cover  "
                             />
                           </span>
                           <span
@@ -92,7 +92,7 @@ const SingleVehiclePage = () => {
                     <img
                       src={image}
                       alt="vehicle image"
-                      className="w-full h-full object-center object-cover sm:rounded-lg"
+                      className="h-full object-center object-cover sm:rounded-lg hover:w-full hover:overflow-auto hover: relative "
                     />
                   </Tab.Panel>
                  ))}
@@ -100,10 +100,13 @@ const SingleVehiclePage = () => {
             </Tab.Group>
 
             {/* Vehicle info */}
-            <div className="mt-10 px-4 sm:px-0 sm:mt-16 lg:mt-0">
+            <div className="mt-10 px-4 sm:px-0 sm:mt-16 lg:mt-0 border">
               <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
-                {vehicle.name}
+                {vehicle.make}
               </h1>
+              <h3 className="text-2xl font-extrabold tracking-tight text-gray-400">
+                {vehicle.model}
+              </h3>
 
               <div className="mt-3">
                 <h2 className="sr-only">Vehicle information</h2>
